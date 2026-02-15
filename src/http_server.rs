@@ -1,35 +1,65 @@
-use hyper::{Body, Request, Response, Server};
-use hyper::service::{make_service_fn, service_fn};
-use std::convert::Infallible;
+use axum::{
+    routing::post,
+    Router,
+    Json,
+    extract::State, 
+};
+use std::net::SocketAddr;
+use std::sync::Arc;
+use anyhow::Result;
+use tokio::sync::RwLock;
 
 
-/*will be used for more than showing an html page */
 
-async fn serve_quote(_req: Request<Body>) -> Result<Response<Body>, Infallible> {
-    let html = r#"
-        <html>
-            <head><title>HEHE BOIAY</title></head>
-            <body>
-                <h1>Promise!</h1>
-                <p>BACK TO WORK MOTHYERFUKCER</p>
-            </body>
-        </html>
-    "#;
+use crate::blocklist::Blocklist;
 
-    Ok(Response::new(Body::from(html)))
+const PORT: u16 = 8080;
+
+pub async fn run_http_server(state: Arc<RwLock<Blocklist>>) -> Result<()> {
+   let app = Router::new()
+    .route("/config", post(save_config).get(get_config)).with_state(state);
+
+    let addr = SocketAddr::from(([127, 0, 0, 1], PORT));
+    println!("HTTP API running on http://{}", addr);
+
+    axum::serve(
+        tokio::net::TcpListener::bind(addr).await?,
+        app,
+    )
+    .await?;
+
+    Ok(())
 }
 
 
-
-pub async fn run_http_server() {
-    let make_svc = make_service_fn(|_conn| async { Ok::<_, Infallible>(service_fn(serve_quote)) });
-
-    let addr = ([127,0,0,1], 80).into();
-    let server = Server::bind(&addr).serve(make_svc);
-
-    println!("HTTP SERVER RUNNING ON http://{}", addr);
-
-    if let Err(e) = server.await {
-        eprintln!("server error: {}", e);
+async fn get_config() -> Json<Blocklist> {
+    match std::fs::read_to_string("config.json") {
+        Ok(contents) => {
+            match serde_json::from_str::<Blocklist>(&contents) {
+                Ok(config) => Json(config),
+                Err(_) => Json(Blocklist { domains: vec![] }),
+            }
+        }
+        Err(_) => Json(Blocklist { domains: vec![] }),
     }
+}
+
+
+async fn save_config(
+    State(state): State<Arc<RwLock<Blocklist>>>,
+    Json(payload): Json<Blocklist>,
+) -> Json<&'static str> {
+
+
+    //global meomory update
+    {
+        let mut config = state.write().await;
+        *config = payload.clone();
+    }
+
+    if let Ok(json) = serde_json::to_string_pretty(&payload) {
+        let _ = std::fs::write("config.json", json);
+    }
+
+    Json("saved")
 }

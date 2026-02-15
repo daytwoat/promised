@@ -7,9 +7,13 @@ use anyhow::{Result, bail};
 
 pub struct BlockedItem{
     pub term: String,
+    pub days: [u8; 7],
+    pub duration: u16, //in minutes
+    // pub from_to: [[String; 2]] //from to day. to implement later
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Blocklist {
     pub(crate) domains: Vec<String>, //testing with just strings
 }
