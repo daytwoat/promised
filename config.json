@@ -1,6 +1,10 @@
 {
   "domains": [
-    "youtube.com",
-    "x.com"
+    {
+      "term": "example.com"
+    },
+    {
+      "term": "reddit.com"
+    }
   ]
 }
