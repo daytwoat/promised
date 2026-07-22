@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Domain Blocker",
+  "version": "1.0",
+  "description": "Block a list of domains",
+  "permissions": ["storage", "declarativeNetRequest"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": false,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "browser_specific_settings": {
+    "gecko": { "id": "domain-blocker@example.com" }
+  }
+}

@@ -2,9 +2,7 @@ mod blocklist;
 mod dns_server;
 mod system_check;
 
-
 use crate::blocklist::Blocklist;
-
 
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -20,7 +18,7 @@ async fn main() -> anyhow::Result<()> {
     let config = Blocklist::load_from_file("./config.json")?;
     let shared_state = Arc::new(RwLock::new(config));
 
-    let dns = tokio::spawn(dns_server::run_dns_server());
+    let dns = tokio::spawn(dns_server::run_dns_server(shared_state.clone()));
     let http = tokio::spawn(http_server::run_http_server(shared_state.clone()));
 
     tokio::select! {
